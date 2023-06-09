@@ -81,6 +81,14 @@ def login():
     else:
         return jsonify({'message': 'Invalid password'}), 401
 
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    # Clear the access token cookie
+    response = jsonify({'message': 'Logged out successfully'})
+    unset_jwt_cookies(response)
+    return response
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50, debug=True)
