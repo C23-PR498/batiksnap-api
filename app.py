@@ -55,9 +55,9 @@ def batik():
 @app.route('/register', methods=['POST'])
 def register():
     # get data
-        name = request.json['name']
-        email = request.json['email']
-        password = request.json['password']
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
         # check data
         cursor = mysql.connection.cursor()
@@ -85,8 +85,8 @@ def register():
 @app.route('/login', methods=['POST'])
 def login():
     # Mengambil data dari request
-    email = request.json['email']
-    password = request.json['password']
+    email = request.form.get('email')
+    password = request.form.get('password')
     
     # Mengecek apakah username ada di database
     cursor = mysql.connection.cursor()
