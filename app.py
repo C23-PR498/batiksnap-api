@@ -1,4 +1,9 @@
 from flask import Flask, jsonify, request
+import tensorflow as tf
+import numpy as np
+import os
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import  img_to_array, load_img
 from flask_mysqldb import MySQL
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, unset_jwt_cookies
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -17,14 +22,33 @@ mysql = MySQL(app)
 UPLOAD_FOLDER = 'img'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# model = load_model('batik_pattern_recognizer_9708_8750_InceptionV3')
+model = load_model('model.h5')
 
-# def predict(path):
-def get_batik_data(result_predict):
-    if 'id' in request.args: 
+def load_label(path):
+  with open(path, "r") as f:
+    lines = f.read()
+    motives_list = lines.strip().split("\n")
+    return motives_list
+
+motives_list = load_label("label.txt")
+
+def predict(path):
+    motives_list
+    img = load_img(path, target_size=(224, 224, 3))
+    img_array = img_to_array(img) / 255.0
+    img_array = tf.expand_dims(img_array, 0)
+    prediction = model.predict(img_array,verbose = 0)
+    pred_idx = np.argmax(prediction)
+    pred_motive = motives_list[pred_idx]
+    pred_confidence = prediction[0][pred_idx] * 100
+
+    return pred_motive
+
+def get_batik_data(result):
+        
         cursor = mysql.connection.cursor()
-        sql = ("SELECT * FROM batik where id = %s")
-        val = (request.args['id'],)
+        sql = "SELECT * FROM batik where nama LIKE %s"
+        val = (result, )
         cursor.execute(sql, val)
 
         # get column names from cursor description
@@ -34,9 +58,9 @@ def get_batik_data(result_predict):
         for row in cursor.fetchall():
             data.append(dict(zip(column_names, row)))
             # console.log(mahasiswa)
-        return jsonify(data)
-        
+        return data
         cursor.close()
+        
 
 @app.route('/batik', methods=['GET'])
 def batik():
@@ -55,9 +79,9 @@ def batik():
 @app.route('/register', methods=['POST'])
 def register():
     # get data
-        name = request.json['name']
-        email = request.json['email']
-        password = request.json['password']
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
         # check data
         cursor = mysql.connection.cursor()
@@ -85,8 +109,8 @@ def register():
 @app.route('/login', methods=['POST'])
 def login():
     # Mengambil data dari request
-    email = request.json['email']
-    password = request.json['password']
+    email = request.form.get('email')
+    password = request.form.get('password')
     
     # Mengecek apakah username ada di database
     cursor = mysql.connection.cursor()
@@ -113,8 +137,8 @@ def logout():
     unset_jwt_cookies(response)
     return response
 
-@app.route('/upload', methods=['POST'])
-@jwt_required()  # user must be logged in to access this route
+@app.route('/upload', methods=['POST', 'GET'])
+@jwt_required()
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'message': 'No file uploaded'}), 400
@@ -127,9 +151,12 @@ def upload_file():
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
 
     # Dapatkan URL file yang diunggah
-    file_url = f"{request.host_url}{UPLOAD_FOLDER}/{file.filename}"
-    # result_predict = predict(file_url)
-    # data = get_batik_data(result_predict)
+    file_url = f"{UPLOAD_FOLDER}/{file.filename}"
+
+    result_predict = predict(file_url)
+    data = get_batik_data(result_predict)
+
+    return jsonify({'cek' : result_predict, 'hasil' : data})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50, debug=True)
