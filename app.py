@@ -14,6 +14,30 @@ app.config['JWT_SECRET_KEY'] = 'batiksnap'
 jwt = JWTManager(app)
 mysql = MySQL(app)
 
+UPLOAD_FOLDER = 'img'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# model = load_model('batik_pattern_recognizer_9708_8750_InceptionV3')
+
+# def predict(path):
+def get_batik_data(result_predict):
+    if 'id' in request.args: 
+        cursor = mysql.connection.cursor()
+        sql = ("SELECT * FROM batik where id = %s")
+        val = (request.args['id'],)
+        cursor.execute(sql, val)
+
+        # get column names from cursor description
+        column_names =  [i[0] for i in cursor.description]
+        # fetch data and format into list dictionaries
+        data = []
+        for row in cursor.fetchall():
+            data.append(dict(zip(column_names, row)))
+            # console.log(mahasiswa)
+        return jsonify(data)
+        
+        cursor.close()
+
 @app.route('/batik', methods=['GET'])
 def batik():
     cursor = mysql.connection.cursor()
@@ -89,6 +113,23 @@ def logout():
     unset_jwt_cookies(response)
     return response
 
+@app.route('/upload', methods=['POST'])
+@jwt_required()  # user must be logged in to access this route
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'No file selected'}), 400    
+    
+    # Simpan file pada direktori lokal
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+
+    # Dapatkan URL file yang diunggah
+    file_url = f"{request.host_url}{UPLOAD_FOLDER}/{file.filename}"
+    # result_predict = predict(file_url)
+    # data = get_batik_data(result_predict)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50, debug=True)
