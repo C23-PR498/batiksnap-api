@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_mysqldb import MySQL
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, unset_jwt_cookies
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -9,15 +10,9 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
 app.config['MYSQL_DB'] = 'batiksnap'
+app.config['JWT_SECRET_KEY'] = 'batiksnap'
+jwt = JWTManager(app)
 mysql = MySQL(app)
-
-# @app.route('/')
-# def root():
-#     return 'halo ini flask'
-
-# @app.route('/siswa')
-# def siswa():
-#     return jsonify({'name' : 'figih'})
 
 @app.route('/batik', methods=['GET'])
 def batik():
@@ -59,7 +54,8 @@ def register():
         cursor.execute(sql, val)
 
         mysql.connection.commit()
-        return jsonify({'message': 'data added successfully'})
+        access_token = create_access_token(identity=email)
+        return jsonify({'message': 'data added successfully', 'access_token': access_token})
         cursor.close()
 
 @app.route('/login', methods=['POST'])
@@ -79,9 +75,12 @@ def login():
     
     # Memeriksa kecocokan password
     if check_password_hash(users[4], password):
-        return jsonify({'message': 'Login successful'})
+        # create access token
+        access_token = create_access_token(identity=email)
+        return jsonify({'message': 'Login successful', 'access_token': access_token})
     else:
         return jsonify({'message': 'Invalid password'}), 401
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50, debug=True)
