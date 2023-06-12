@@ -44,10 +44,10 @@ def predict(path):
 
     return pred_motive
 
-def get_batik_data(result):
+def create_list_data(result):
         
         cursor = mysql.connection.cursor()
-        sql = "SELECT * FROM batik where nama LIKE %s"
+        sql = "SELECT id, nama, image, deskripsi FROM batik where nama LIKE %s"
         val = (result, )
         cursor.execute(sql, val)
 
@@ -57,7 +57,7 @@ def get_batik_data(result):
         data = []
         for row in cursor.fetchall():
             data.append(dict(zip(column_names, row)))
-            # console.log(mahasiswa)
+            # console.log()
         return data
         cursor.close()
         
@@ -72,7 +72,7 @@ def batik():
     data = []
     for row in cursor.fetchall():
         data.append(dict(zip(column_names, row)))
-        # console.log(mahasiswa)
+        # console.log()
         return jsonify(data)
     cursor.close()
     
@@ -154,9 +154,27 @@ def upload_file():
     file_url = f"{UPLOAD_FOLDER}/{file.filename}"
 
     result_predict = predict(file_url)
-    data = get_batik_data(result_predict)
+    data = create_list_data(result_predict)
 
     return jsonify({'cek' : result_predict, 'hasil' : data})
+
+@app.route('/detail/<int:id>', methods=['GET'])
+@jwt_required()
+def get_batik_data(id):
+        cursor = mysql.connection.cursor()
+        sql = "SELECT * FROM batik where id = %s"
+        val = (id, )
+        cursor.execute(sql, val)
+
+        # get column names from cursor description
+        column_names =  [i[0] for i in cursor.description]
+        # fetch data and format into list dictionaries
+        data = []
+        for row in cursor.fetchall():
+            data.append(dict(zip(column_names, row)))
+            # console.log()
+        cursor.close()
+        return jsonify(data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=50, debug=True)
