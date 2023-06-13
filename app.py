@@ -141,11 +141,11 @@ def logout():
 @jwt_required()
 def upload_file():
     if 'file' not in request.files:
-        return jsonify({'message': 'No file uploaded'}), 400
+        return jsonify({'error': 'true' ,'message': 'No file uploaded'}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'message': 'No file selected'}), 400    
+        return jsonify({ 'error': 'true' ,'message': 'No file selected'}), 400    
     
     # Simpan file pada direktori lokal
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
@@ -156,7 +156,7 @@ def upload_file():
     result_predict = predict(file_url)
     data = create_list_data(result_predict)
 
-    return jsonify({'cek' : result_predict, 'hasil' : data})
+    return jsonify({'error': 'false' ,'predict' : result_predict, 'listBatik' : data})
 
 @app.route('/detail/<int:id>', methods=['GET'])
 @jwt_required()
