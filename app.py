@@ -43,23 +43,6 @@ def predict(path):
     pred_confidence = prediction[0][pred_idx] * 100
 
     return pred_motive
-
-# def create_list_data(result):
-        
-#         cursor = mysql.connection.cursor()
-#         sql = "SELECT id, nama, image, deskripsi FROM batik where nama LIKE %s"
-#         val = (result, )
-#         cursor.execute(sql, val)
-
-#         # get column names from cursor description
-#         column_names =  [i[0] for i in cursor.description]
-#         # fetch data and format into list dictionaries
-#         data = []
-#         for row in cursor.fetchall():
-#             data.append(dict(zip(column_names, row)))
-#             # console.log()
-#         return data
-#         cursor.close()
         
 
 @app.route('/batik', methods=['GET'])
@@ -176,12 +159,12 @@ def create_list_data(result_predict):
         cursor.close()
         return jsonify({'error': 'false', 'listBatik' : data})
 
-@app.route('/detail/<int:id>', methods=['GET'])
+@app.route('/list/<result_predict>/<int:id>', methods=['GET'])
 @jwt_required()
-def get_batik_data(id):
+def get_batik_data(result_predict, id):
         cursor = mysql.connection.cursor()
-        sql = "SELECT * FROM batik where id = %s"
-        val = (id, )
+        sql = "SELECT * FROM batik where id = %s AND nama = %s"
+        val = (id, result_predict )
         cursor.execute(sql, val)
 
         # get column names from cursor description
