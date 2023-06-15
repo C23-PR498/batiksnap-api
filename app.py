@@ -44,22 +44,22 @@ def predict(path):
 
     return pred_motive
 
-def create_list_data(result):
+# def create_list_data(result):
         
-        cursor = mysql.connection.cursor()
-        sql = "SELECT id, nama, image, deskripsi FROM batik where nama LIKE %s"
-        val = (result, )
-        cursor.execute(sql, val)
+#         cursor = mysql.connection.cursor()
+#         sql = "SELECT id, nama, image, deskripsi FROM batik where nama LIKE %s"
+#         val = (result, )
+#         cursor.execute(sql, val)
 
-        # get column names from cursor description
-        column_names =  [i[0] for i in cursor.description]
-        # fetch data and format into list dictionaries
-        data = []
-        for row in cursor.fetchall():
-            data.append(dict(zip(column_names, row)))
-            # console.log()
-        return data
-        cursor.close()
+#         # get column names from cursor description
+#         column_names =  [i[0] for i in cursor.description]
+#         # fetch data and format into list dictionaries
+#         data = []
+#         for row in cursor.fetchall():
+#             data.append(dict(zip(column_names, row)))
+#             # console.log()
+#         return data
+#         cursor.close()
         
 
 @app.route('/batik', methods=['GET'])
@@ -154,9 +154,27 @@ def upload_file():
     file_url = f"{UPLOAD_FOLDER}/{file.filename}"
 
     result_predict = predict(file_url)
-    data = create_list_data(result_predict)
+    # data = create_list_data(result_predict)
 
-    return jsonify({'error': 'false' ,'predict' : result_predict, 'listBatik' : data})
+    return jsonify({'error': 'false' ,'predict' : result_predict})
+
+@app.route('/list/<result_predict>', methods=['GET'])
+@jwt_required()
+def create_list_data(result_predict):       
+        cursor = mysql.connection.cursor()
+        sql = "SELECT id, nama, image, deskripsi FROM batik where nama LIKE %s"
+        val = (result_predict, )
+        cursor.execute(sql, val)
+
+        # get column names from cursor description
+        column_names =  [i[0] for i in cursor.description]
+        # fetch data and format into list dictionaries
+        data = []
+        for row in cursor.fetchall():
+            data.append(dict(zip(column_names, row)))
+            # console.log()
+        cursor.close()
+        return jsonify({'error': 'false', 'listBatik' : data})
 
 @app.route('/detail/<int:id>', methods=['GET'])
 @jwt_required()
